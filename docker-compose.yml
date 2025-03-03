@@ -1,0 +1,191 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "3000:3000"
+    depends_on:
+      - admin-service
+      - user-service
+      - sales-service
+      - payment-service
+      - notification-service
+    networks:
+      - app-network
+    restart: always
+    environment:
+      - KAFKA_BROKER=kafka:9092
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=example
+      - DB_NAME=ticket_system
+
+  admin-service:
+    build: ./admin-service
+    container_name: admin-service
+    ports:
+      - "3001:3000"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: always
+    environment:
+      - KAFKA_BROKER=kafka:9092,localhost:29092
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=example
+      - DB_NAME=ticket_system
+
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    ports:
+      - "3002:3000"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: always
+    environment:
+      - KAFKA_BROKER=kafka:9092,localhost:29092
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=example
+      - DB_NAME=ticket_system
+
+  sales-service:
+    build: ./sales-service
+    container_name: sales-service
+    ports:
+      - "3003:3000"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: always
+    environment:
+      - KAFKA_BROKER=kafka:9092,localhost:29092
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=example
+      - DB_NAME=ticket_system
+
+  payment-service:
+    build: ./payment-service
+    container_name: payment-service
+    ports:
+      - "3004:3000"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      sales-service:
+        condition: service_started
+    networks:
+      - app-network
+    restart: always
+    environment:
+      - KAFKA_BROKER=kafka:9092,localhost:29092
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=example
+      - DB_NAME=ticket_system
+
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    ports:
+      - "3005:3000"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      payment-service:
+        condition: service_started
+    networks:
+      - app-network
+    restart: always
+    environment:
+      - KAFKA_BROKER=kafka:9092,localhost:29092
+
+  db:
+    image: postgres:latest
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: ticket_system
+    networks:
+      - app-network
+    restart: always
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--list", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - app-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  app-network:
+    driver: bridge
