@@ -1,0 +1,6 @@
+# Ignorar os microserviços pois cada um tem seu repositório separado
+/api-gateway/
+/user-service/
+/sales-service/
+/payment-service/
+/notification-service/
