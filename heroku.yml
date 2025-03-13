@@ -1,5 +1,21 @@
+setup:
+  addons:
+    - plan: heroku-postgresql
+      as: DATABASE
+
 build:
   docker:
-    web: Dockerfile  # Deve estar exatamente assim, sem diretório
+    admin-service: admin-service/Dockerfile
+    payment-service: payment-service/Dockerfile
+    api-gateway: api-gateway/Dockerfile
+    user-service: user-service/Dockerfile
+    sales-service: sales-service/Dockerfile
+    notification-service: notification-service/Dockerfile
+
 run:
-  web: npm run start  # Ajuste conforme o comando que inicia sua aplicação
+  admin-service: npm run start
+  payment-service: npm run start
+  api-gateway: npm run start
+  user-service: npm run start
+  sales-service: npm run start
+  notification-service: npm run start
