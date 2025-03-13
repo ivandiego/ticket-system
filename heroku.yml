@@ -1,6 +1,5 @@
 build:
   docker:
-    web: Dockerfile  # Usa o Dockerfile para buildar a aplicação
-
+    web: Dockerfile  # Deve estar exatamente assim, sem diretório
 run:
-  web: npm run start  # Comando para rodar o apps
+  web: npm run start  # Ajuste conforme o comando que inicia sua aplicação
