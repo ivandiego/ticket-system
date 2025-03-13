@@ -7,11 +7,16 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - admin-service
-      - user-service
-      - sales-service
-      - payment-service
-      - notification-service
+      admin-service:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      sales-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
     networks:
       - app-network
     restart: always
@@ -22,6 +27,11 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=example
       - DB_NAME=ticket_system
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   admin-service:
     build: ./admin-service
@@ -43,6 +53,11 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=example
       - DB_NAME=ticket_system
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   user-service:
     build: ./user-service
@@ -136,7 +151,7 @@ services:
       - app-network
     restart: always
     volumes:
-      - ./data/db:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 10s
@@ -189,3 +204,6 @@ services:
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  pgdata:
